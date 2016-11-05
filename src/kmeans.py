@@ -1,12 +1,8 @@
 # coding: utf-8
+
 import numpy as np
 import random
 from numpy import linalg as LA
-import cPickle
-from PIL import Image
-from sklearn.feature_extraction.image import extract_patches_2d
- 
-
 
 
 
@@ -45,7 +41,16 @@ def affectation(X, C):
         
     return tabDist
 
-
+def affectation2(X, mu):
+    clusters  = {}
+    for x in X:
+        bestmukey = min([(i[0], np.linalg.norm(x-mu[i[0]])) \
+            for i in enumerate(mu)], key=lambda t:t[1])[0]
+        try:
+            clusters[bestmukey].append(x)
+        except KeyError:
+            clusters[bestmukey] = [x]
+    return clusters
 
 
 
@@ -61,67 +66,79 @@ def misAjourCentroid(centroid):
         #newCentroid[centroid[i]] = np.mean(centroid[i], axis = 0)
     return newCentroid
 
-def testConverge(newCen,oldCen):
+
+
+def testConvergenceOptimal(newCen,oldCen):
+    print "test convergence"
     return (set([tuple(a) for a in newCen]) == set([tuple(a) for a in oldCen])) 
 
 
-#param : k le nb de centroids
+
+#param : X=ensemble de vecteur, k le nb de centroids, nbIteration = nombre de itération pour chercher les cendroids
 #retourn la liste des centroids
-def findCentroid(X,k):
+def findCentroid(X,k,nbIteration):
    
     #initialisation des centroids aléatoirement
     oldCen = random.sample(X, k)
     newCen = random.sample(X, k)
-    print newCen
+    #print "init new centroid :"+str(newCen)
+    #print "init old centroid :"+str(oldCen)
+
+    i=0
     #calcul la distance de entre un vecteur Xi avec tous ces centroids et on selectionne le plus petit 
-    while not testConverge(newCen,oldCen):
+    #while not testConverge(newCen,oldCen):
+    while i<nbIteration:
+
         oldCen = newCen
        
         #on va affecter un centroid a chaque vecteur, la variable centroidListVect contiendra tout les centroids avec leur vecteurs de X
-        centroidListVect = affectation(X, newCen)
-        
+        centroidListVect = affectation2(X, newCen)
+        #print "list vecteur "+str(centroidListVect)
         #mis a jours  tout les centroids
         newCen = misAjourCentroid(centroidListVect)
-    
+        
+        #print "new centroid :"+str(newCen)
+        #print "old centroid :"+str(oldCen)
+
+        i=i+1
     return(newCen, centroidListVect)
 
 
 
 #param : X = vecteur, C : list des centroids
-#retourne 1 vecteur c'est à dire le FK
+#retourne 1 vecteur ,c'est à dire le resultat de FK
 def kmeanHard(X,C):
-    resultX={}
+    #on initialise le vectueur de fk à 0 de la même taille que le nombre de cendroid 
+    resultX=np.array([0]*len(C))
     m=0.0
-    for x in X:
-        listCentroid={}
-        for cle in C:
-            tmp=LA.norm(cle-x)#on calcule la norme 2 entre le vecteur X et le centroid 
-            if(m>tmp):#si la nouvelle distance est plus petite que l'ancien alors on met à jours le vecteur de sortie
-                m=tmp
-                listCentroid[tuple(cle)]=1
-            else :
-                listCentroid[tuple(cle)]=0
-        
-        resultX[tuple(x)]=listCentroid
-
+    indiceMin=0
+    i=0
+    for cle in C:
+        tmp=LA.norm(cle-X)#on calcule la norme 2 entre le vecteur X et le centroid 
+        if(m>tmp):#si la nouvelle distance est plus petite que l'ancien alors on met à jours le vecteur de sortie
+            m=tmp
+            #on stock l'indice du centroid
+            indiceMin=i
+        i=i+1
+    #on affecte la valeur 1 au cendroid qui contient le vecteur X
+    resultX[indiceMin]=1
     return resultX
 
 
+
+
+
 #param : X = vecteur, C : list des centroids
-#retourne 1 vecteur c'est à dire le FK
-def kmeanTrianle(X,C):
-    resultX={}
-    for x in X:
-        listCentroid={}
-        for cle in C:
-            #print x
-            #tmpX = x[0]
-            #print tmpX
-            tmp=cle
-            listCentroid[tuple(cle)]=LA.norm(cle-x)#on calcule la norme 2 entre le vecteur X et le centroid 
-            print listCentroid
-        resultX[tuple(x)]=listCentroid
-        
+#retourne 1 vecteur ,c'est à dire le resultat de FK
+def kmeanTriangle(X,C):
+    #on initialise le vectueur de fk à 0 de la même taille que le nombre de cendroid 
+    resultX=np.array([0]*len(C))
+    i=0
+    for cle in C:
+        #on affecte la valeur de la norme 2 entre le vecteur X et le centroid 
+        resultX[i]=LA.norm(cle-X)#on calcule 
+        i=i+1
+   
     return resultX
 
 def init_board_gauss(N, k):
@@ -133,23 +150,18 @@ def init_board_gauss(N, k):
         x = []
         while len(x) < n:
             a, b = np.array([np.random.normal(c[0], s), np.random.normal(c[1], s)])
-            d = np.array([np.random.normal(c[1], s), np.random.normal(c[1], s)])
-
-
             # Continue drawing points from the distribution in the range [-1,1]
             if abs(a) < 1 and abs(b) < 1:
-                x.append([a,b,d])
+                x.append([a,b])
         X.extend(x)
-    print X
+    #print X
     X = np.array(X)[:N]
     return X
-
-
-
 
 def unpickle(file):
     """ Unpickle a file in a dictionnary
     """
+    import cPickle
     fo = open(file, 'rb')
     dict = cPickle.load(fo)
     fo.close()
@@ -163,7 +175,10 @@ def extract_patches(batchfile="/Users/ozad/git/CIFAR_project/dataset/cifar-10-ba
     max_patches: maximum number of randomly extracted patches per image
     """
         
-      
+    import numpy as np
+    from PIL import Image
+    from sklearn.feature_extraction.image import extract_patches_2d
+    
     #load the data
     dict=unpickle(batchfile)
     patches=[]
@@ -186,26 +201,27 @@ def extract_patches(batchfile="/Users/ozad/git/CIFAR_project/dataset/cifar-10-ba
     return patches
 
 
+#jeu de teste à petite échelle
 
-
-
-
-#TODO : main
-
-X2=extract_patches()
-mu,clu=findCentroid(X2,3)
-print "liste des centroids : "+str(mu) 
-
-#test 
-'''a =np.array([[1,2, 3],[11,22, 97],[19,82, 3],[1,2, 3],[12,225, 44],[141,222, 97],[139,82, 33],[14,2, 3],[14,5, 31],[45,2, 41],[21,75, 90],[1,51, 42],[41,55, 4] ,[3,2,8],[13,22,4]])
+#ici la dimension d'un vecteur est de 3 
+a =np.array([[1,2, 3],[11,22, 97],[19,82, 3],[1,2, 3],[12,225, 44],[141,222, 97],[139,82, 33],[14,2, 3],[14,5, 31],[45,2, 41],[21,75, 90],[1,51, 42],[41,55, 4] ,[3,2,8],[13,22,4]])
 #a =np.array([[1,2],[11,22],[19, 3],[1, 3],[1, 4],[45, 41],[75, 90],[151, 42],[55, 4] ,[32,8],[22,4]])
 
+#on créer un vecteur vect
+vect = np.array([1,2,3])
+mu,clu=findCentroid(a,3,5)
 
-print a
-type(a)
-mu,clu=findCentroid(a,3)
-print "liste centroid "+str(mu)
-#print clu
-result=kmeanTrianle(a,mu)
-print "result kmean triangle : "+str(result)
-'''
+print "Liste centroid "+str(mu)
+print "Regroupement des vecteurs selon leur centroids respective : "+str(clu)
+
+resultHard=kmeanHard(vect,mu)
+print "Resultat kmean hard : "+str(resultHard)
+
+resultTri=kmeanTriangle(vect,mu)
+print "Resultat kmean hard : "+str(resultTri)
+
+
+
+#jeu de test en grandeur nature
+#X2=extract_patches()
+#mu,clu=findCentroid(X2,3,5)

@@ -54,3 +54,40 @@ def inference(image, label):
         correct=1.0
     return classe, correct
 
+
+############################# Transform representation of an image from raw pixels (32,32,3) to a vector of 4K dimension of features
+
+def transform_representation(image, w, s, K):
+    #image is in (32,32,3) order
+    #w is the width (height) of the patch
+    # s is the stride
+    #K is the number of 
+    
+    window_shape = (w, w, 3)  
+    
+    #extraire tous les patchs de dimensions (w,w,3) avec un stepsize de s
+    patches=view_as_windows(image, window_shape, step=s)
+    
+    image_representation=np.zeros([patches.shape[0], patches.shape[1] ,K])
+    
+    #faire le mapping avec fk
+    for i in range(patches.shape[0]):
+        for j in range(patches.shape[1]):
+            raw_patch=patches[i][j][0].reshape(-1, w*w*3)
+            
+            
+            image_representation[i][j]=kmeans(raw_patch)  #TODO à changer ici
+            
+    quadrant=patches.shape[0]/2
+    size=patches.shape[0]-1    
+    
+    classifier_features=np.zeros([2, 2 ,K])
+    for i in range(K):
+        classifier_features[0][0][i]=sum(image_representation[[0,quadrant-1], [0,quadrant-1], i])
+        classifier_features[0][1][i]=image_representation[[quadrant,size], [0,quadrant-1], i]
+        classifier_features[1][0][i]=image_representation[[0,quadrant-1], [quadrant, size], i]
+        classifier_features[1][1][i]=image_representation[[quadrant, size], [quadrant, size], i]
+
+    return classifier_features.reshape(-1, 2*2*K)
+    
+

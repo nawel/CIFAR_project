@@ -28,7 +28,7 @@ class Perceptron(object):
             return -1
     
     """ return le sum WiXi pour de tout les perceptron"""
-    def sumAllPerceptronWiXi(listeP, X):
+    def sumAllPerceptronWiXi(self,listeP, X):
         out=0.0
         for p in listeP:
             out = out+ sum([wi * xi for wi, xi in zip(p.w, X)]) 
@@ -41,11 +41,12 @@ class Perceptron(object):
         i=0
         tmp=0.0
         bonPerceptron=0
+        sumAllpercep = self.sumAllPerceptronWiXi(listeP,X)
         for p in listeP:
             
             #On calcule la valeur de sortie : sum(wi*xi)
             out = sum([wi * xi for wi, xi in zip(p.w, X)]) 
-            out = np.exp(out)/sumAllPerceptronWiXi(listeP,X)
+            out = np.exp(out)/sumAllpercep
             if out>tmp:
                 tmp=out
                 bonPerceptron=i

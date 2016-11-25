@@ -10,8 +10,7 @@ from ipywidgets import FloatProgress
 from IPython.display import display
 import threading
 import time 
-
-
+from sklearn import preprocessing
  
 class Perceptron(object):
     """docstring for Perceptron"""
@@ -30,7 +29,6 @@ class Perceptron(object):
     def trainningPredic(self, X):
         #On calcule la valeur de sortie : sum(wi*xi)
         out = sum(self.w*X)+self.biais 
-        #print "out = "+str(out)
         """ > 19 => t° erreur = 51%  sans le biais"""
         if out >= 0:
             return 1
@@ -41,7 +39,7 @@ class Perceptron(object):
     def sumAllPerceptronWiXi(self,listeP, X):
         out=0.0
         for p in listeP:
-            out = out+ np.exp(sum(p.w*X)) 
+            out = out+ sum(np.exp(p.w*X)) 
         return out
     
     
@@ -102,22 +100,23 @@ class Perceptron(object):
             globalError = 0.0
             for x in data: # on parcourt tout les data d'apprentissage
                 out = self.trainningPredic(x)
-                #on compare la valeur de sortie attendu avec la valeur de sortie actuel
- 
                 y=-1
                 if label==listLabel[compt] :
                     y=1#on met 1 dans y , la valeur qu'on souhaite que la prédicion retourne
-                erreurSortie = y-out
-                #if out == -1  and label==listLabel[compt]: 
- 
-                self.updateWeights(x, erreurSortie)
-                globalError = abs(erreurSortie) +globalError
+
+                #on compare la valeur de sortie attendu avec la valeur de sortie actuel
+                if out!=y:
+                    #erreurSortie = y-out
+                    self.updateWeights(x, y-out)
+                    globalError = 1
                 compt=compt+1
             compt=0
             iteration += 1
             print "nb ité : "+str(iteration)
-            # on vérifie nos conditions d'arrêts
-            if globalError == 0.0 or iteration >= nbIteration: 
+            # on vérifie nos conditions d'arrêts qui sont :  le npmbre itération, et le global erreur c'est à dire qu'on vérifie si la convergence des Wi 
+            if globalError == 0.0 or iteration >= nbIteration:  
+            #if iteration >= nbIteration: 
+
                 fin = True # on sort de la boucle
  
     def train2(self, data,nbIteration):
@@ -141,16 +140,6 @@ class Perceptron(object):
             if globalError == 0.0 or iteration >= nbIteration: 
                 fin = True # on sort de la boucle
                 #print "globalError = "+str(globalError) + ' avec  iterations = %s' % iteration
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -219,14 +208,6 @@ def mainPt ():
     d2 = [-d[1], d[0]]
     plot([d1[0], d2[0]], [d1[1], d2[1]], '--k')
     show()
-
-
-
-
-
-
-
-
 
 
 def mainVect2(nbIte,biaisInit,pas):
@@ -308,64 +289,38 @@ def mainVect2(nbIte,biaisInit,pas):
     print "taux d'erreur : "+str(toErreur)
 
 
-
-
-
-
-
-
-
-def mainVect3(nbIte,biaisInit,pas):
-
-
-
-    NLABELS=10
-    # Load the dataset
+def test():
     f = gzip.open('/Users/ozad/Desktop/ecole/masterAic/TC1/tp5/mnist.pkl.gz', 'rb')
 
     train_set, valid_set, test_set = cPickle.load(f)
-
-    print str(len(train_set[0]))+" training examples"
-    f.close()
-    # exemple: 
+    testset = np.array( test_set[0][0:5000])
+    print len(testset)
 
 
-    testset = np.array(test_set[0])
-    labelsTest =  np.array(test_set[1])
-
-    images =  np.array(train_set[0])
-    #print (len(images[0]))
-    labelsTrain = np.array( train_set[1])
-
-    listePercep=[]
-
-    print "phase initialisation"
-    #phase création et initialisation des perceptron
-    for i in range(NLABELS) :
-        print"début init perceptron "+str(i)
-        p = Perceptron() # use a short
-        p.name=i
-        #on init le biais
-        p.biais=biaisInit
-        #on init le pas apprentissage
-        p.epsilon=pas
-        #print"début initialisation des poids"
-        p.intPoid(len(images[0]))# on initialise les poid , avec la taille de 784
-        #print"fin initialisation des poids"
-        listePercep.append(p)#on ajoute le nouveau perceptron dans la liste 
-        #print"fin init perceptron "+str(i)
-    print "fin initialisation"
+def phaseTest(NLABELS,testset,labelsTest,listePercep):
 
 
-    print "phase entrainement"
-    #phase entrainement
-    """for i in range(NLABELS) :   
-        #on entraine les 10 perceptron selon les label
-        print "entrainement perceptron : "+str(listePercep[i].name) +" , i = "+str(i)
-        listePercep[i].train3(images,nbIte,i,labelsTrain)
-        #thread.start_new_thread( print_time, ("Thread-1", 2, ) )
-    """
-      
+
+    print "phase test..."
+    toErreur=0.0  
+    k=0
+    for x in testset:
+        y=labelsTest[k]
+        r = listePercep[0].testPredic(x,listePercep)
+         #on compare la valeur de sortie attendu avec la valeur de sortie actuel
+        if r != y : 
+            #on incrémente le compteur des erreurs
+            toErreur +=1 
+        k=k+1
+        #TODO faire le t° d'erreur par classe
+
+    #calculer le to d'erreur       
+    toErreur = toErreur/(k+1)
+    print "fin test."
+    print "taux d'erreur : "+str(toErreur)
+
+
+def phaseEntrainement(listePercep,images,nbIte,labelsTrain):
     threads = []
     t0=threading.Thread( target=listePercep[0].train3, args=(images,nbIte,0,labelsTrain) )
     threads.append(t0)
@@ -415,44 +370,64 @@ def mainVect3(nbIte,biaisInit,pas):
     print "Exiting Main Thread"
 
     
-    while(finAllThread!=10):
-              time.sleep(1)
-    
     
     print "fin entrainement"
-   
-        
 
 
-    print "phase test..."
-    toErreur=0.0  
-    k=0
+def phaseInit(NLABELS,images,biaisInit,pas):
+    print "phase initialisation"
+    #phase création et initialisation des perceptron
+    listePercep=[]
     for i in range(NLABELS) :
-        subtrain2=(testset[labelsTest==i])
-        print "tes label :"+str(i)
-        for x in subtrain2:
-            #print "perceptron : "+str(listePercep[i].name) + " label : "+str(i)
+        print"début init perceptron "+str(i)
+        p = Perceptron() # use a short
+        p.name=i
+        #on init le biais
+        p.biais=biaisInit
+        #on init le pas apprentissage
+        p.epsilon=pas
+        #print"début initialisation des poids"
+        p.intPoid(len(images[0]))# on initialise les poid , avec la taille de 784
+        #print"fin initialisation des poids"
+        listePercep.append(p)#on ajoute le nouveau perceptron dans la liste 
+        #print"fin init perceptron "+str(i)
+    print "fin initialisation"
+    return listePercep
 
-            r = listePercep[i].testPredic(x,listePercep)
-            #on compare la valeur de sortie attendu avec la valeur de sortie actuel
-            if r != i: 
-                #print "attendu = "+str(i)+" , renvoyé par le réseau : "+str(r)
-                #on incrémente le compteur des erreurs
-                toErreur +=1 
-            k=k+1
-            #TODO faire le t° d'erreur par classe
 
-    #calculer le to d'erreur       
-    toErreur = toErreur/(k+1)
-    print "fin test."
-    print "taux d'erreur : "+str(toErreur)
+def mainVect3(nbIte,biaisInit,pas):
 
+    NLABELS=10
+    # Load the dataset
+    f = gzip.open('/Users/ozad/Desktop/ecole/masterAic/TC1/tp5/mnist.pkl.gz', 'rb')
+    train_set, valid_set, test_set = cPickle.load(f)
+    print str(len(train_set[0]))+" training examples"
+    f.close()
+    min_max_scaler = preprocessing.MinMaxScaler()
+    testset = min_max_scaler.fit_transform(np.array(test_set[0][0:5000]))
+    
+    labelsTest =  np.array(test_set[1][0:5000])
+    
+    images = min_max_scaler.fit_transform( np.array(train_set[0][0:5000]))
+    #print (len(images[0]))
+    labelsTrain = np.array( train_set[1][0:5000])
+
+#TODO normaliser les entree
+    #phase init
+    listePercep=phaseInit(NLABELS,images,biaisInit,pas)
+
+    #phase entrainement  
+    #TODO faire une sauvegarde des fichiers contenant les Wi 
+    phaseEntrainement(listePercep,images,nbIte,labelsTrain)
+
+    #phase test
+    phaseTest(NLABELS,testset,labelsTest,listePercep)
     
     
     
-#mainPt()
-#meilleur param :  n200, 1, 0.45 : nbIte,biaisInit,pas
-mainVect3(10,1,0.45)
+
+#param : nb Iteration, biais Initial , le pas
+mainVect3(100,1,0.45)
 
 # cProfile test.py pour surveiller les teste
 

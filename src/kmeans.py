@@ -110,7 +110,7 @@ def findCentroid(X,k,nbIteration):
 def kmeanHard(X,C):
     #on initialise le vectueur de fk à 0 de la même taille que le nombre de cendroid 
     resultX=np.array([0]*len(C))
-    m=0.0
+    m=float("inf")
     indiceMin=0
     i=0
     for cle in C:
@@ -138,7 +138,10 @@ def kmeanTriangle(X,C):
         #on affecte la valeur de la norme 2 entre le vecteur X et le centroid 
         resultX[i]=LA.norm(cle-X)#on calcule 
         i=i+1
-   
+        
+    mn=np.mean(resultX)
+    resultX=np.maximum(0,resultX-mn)
+    
     return resultX
 
 def init_board_gauss(N, k):

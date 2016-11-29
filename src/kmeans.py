@@ -207,24 +207,33 @@ def extract_patches(batchfile="/Users/ozad/git/CIFAR_project/dataset/cifar-10-ba
 #jeu de teste à petite échelle
 
 #ici la dimension d'un vecteur est de 3 
-a =np.array([[1,2, 3],[11,22, 97],[19,82, 3],[1,2, 3],[12,225, 44],[141,222, 97],[139,82, 33],[14,2, 3],[14,5, 31],[45,2, 41],[21,75, 90],[1,51, 42],[41,55, 4] ,[3,2,8],[13,22,4]])
+#a =np.array([[1,2, 3],[11,22, 97],[19,82, 3],[1,2, 3],[12,225, 44],[141,222, 97],[139,82, 33],[14,2, 3],[14,5, 31],[45,2, 41],[21,75, 90],[1,51, 42],[41,55, 4] ,[3,2,8],[13,22,4]])
 #a =np.array([[1,2],[11,22],[19, 3],[1, 3],[1, 4],[45, 41],[75, 90],[151, 42],[55, 4] ,[32,8],[22,4]])
 
 #on créer un vecteur vect
-vect = np.array([1,2,3])
-mu,clu=findCentroid(a,3,5)
+#vect = np.array([1,2,3])
+#mu,clu=findCentroid(a,3,5)
 
-print "Liste centroid "+str(mu)
-print "Regroupement des vecteurs selon leur centroids respective : "+str(clu)
+#print "Liste centroid "+str(mu)
+#print "Regroupement des vecteurs selon leur centroids respective : "+str(clu)
 
-resultHard=kmeanHard(vect,mu)
-print "Resultat kmean hard : "+str(resultHard)
+#resultHard=kmeanHard(vect,mu)
+#print "Resultat kmean hard : "+str(resultHard)
 
-resultTri=kmeanTriangle(vect,mu)
-print "Resultat kmean hard : "+str(resultTri)
+#resultTri=kmeanTriangle(vect,mu)
+#print "Resultat kmean hard : "+str(resultTri)
 
 
 
 #jeu de test en grandeur nature
 #X2=extract_patches()
 #mu,clu=findCentroid(X2,3,5)
+
+from sklearn.cluster import KMeans
+import numpy as np
+import pickle 
+
+X = extract_patches()
+kmeans = KMeans(n_clusters=1600, random_state=0, n_init=1, verbose=1, max_iter=50).fit(X)
+
+pickle.dump(kmeans.cluster_centers_, open("centroids", "wb"))

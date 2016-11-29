@@ -54,7 +54,7 @@ def transform_representation(image, w, s, centroids, affect='hard'):
 
 
 #fonction qui transforme toutes les images d'un dataset en array de vecteur de features
-def extract_features(images, centroids, w=6, s=1)
+def extract_features(images, centroids, w=6, s=1, affect='hard'):
     # images input is images=dict['data']
     #centroids: liste des centroids
     #w taille des patchs
@@ -63,7 +63,7 @@ def extract_features(images, centroids, w=6, s=1)
     list_features=[]
 
     for img in images:
-        features=transform_representation(img, w, s, len(centroids),centroids)   
+        features=transform_representation(img, w, s, centroids,affect )   
         list_features.append(features)
 
     array_features=np.array(list_features)

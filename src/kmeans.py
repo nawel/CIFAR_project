@@ -234,6 +234,12 @@ import numpy as np
 import pickle 
 
 X = extract_patches()
+X=X.reshape(X.shape[0], 3, 6, 6).transpose(0,2,3,1)
+patches_preproc=[]
+for i in range(len(X)):
+    patches_preproc.append(normalize(X[i]))
+patches_preproc = np.array(patches_preproc).reshape(-1,6*6*3)
+X=patches_preproc
 kmeans = KMeans(n_clusters=1600, random_state=0, n_init=1, verbose=1, max_iter=50).fit(X)
 
 pickle.dump(kmeans.cluster_centers_, open("centroids", "wb"))

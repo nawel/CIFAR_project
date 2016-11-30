@@ -4,6 +4,7 @@ from sklearn.feature_extraction.image import extract_patches_2d
 from skimage.util.shape import view_as_windows
 from kmeans import kmeanTriangle, kmeanHard
 import math
+from preprocess_list import blurring_smoothing, normalize,sharpening
 
 
 #fonction qui transforme une image (32,32,3) en un vecteur de features
@@ -29,7 +30,8 @@ def transform_representation(image, w, s, centroids, affect='hard'):
     #Compute activation function (TRIANGLE or HARD kmeans)
     for i in range(patches.shape[0]):
         for j in range(patches.shape[1]):
-            raw_patch=patches[i][j][0].reshape(-1, w*w*3)
+            proc=normalize(patches[i][j][0])
+            raw_patch=proc.reshape(-1, w*w*3)
             if(affect=='hard'):
                 image_representation[i][j]=kmeanHard(raw_patch,centroids)
             if(affect=='triangle'):
@@ -61,11 +63,12 @@ def extract_features(images, centroids, w=6, s=1, affect='hard'):
     # s espace entre les patchs
     images = images.reshape(10000, 3, 32, 32).transpose(0,2,3,1)
     list_features=[]
-
+    i=1
     for img in images:
+        print i
         features=transform_representation(img, w, s, centroids,affect )   
         list_features.append(features)
-
+        i=i+1
     array_features=np.array(list_features)
     
     return array_features

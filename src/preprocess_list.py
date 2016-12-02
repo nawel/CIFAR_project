@@ -7,6 +7,7 @@ import matplotlib
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt 
 import numpy as np
+import scipy as sp
 
 from copy import deepcopy
 import cv2
@@ -29,23 +30,30 @@ def un_shuffle(img):
     img = np.hstack((loc1,loc2,loc3))
     return img
     
+def whitening(img,image):
+    img=images
+    image=deepcopy(image)
+    moy = np.zeros((img.shape[1],img.shape[1]))
+    
+#    compute eigenvalues and eigenvectors of the mean XX.T matric on the whole dataset
+    for i in range(1,img.shape[0]):
+        moy += np.multiply(img[i,:], img[i,:].T)
+        
+    moy = moy/img.shape[0]
+    w,v = np.linalg.eig(moy)    
+  
+#   whiten the image
+    mat_list = [v,sp.linalg.sqrtm(np.diag(1/w)),v.T]
+
+    whitened_image = np.zeros(image.shape)
+    A_tilde = reduce(np.dot,mat_list)
+    whitened_image = np.dot(A_tilde,image)
+        
+    return  whitened_image
+
     
     
-#==============================================================================
-#     la liste des traitements (restants) possibles
-#         
-#     def PCA (img):
-#         
-#     def ZCA_preprocessing():
-#     
-#     def whitening(img):
-
-
-#==============================================================================
-
-
-
-def whitening(img):
+def normalization(img):
 #    substract of the mean and divide by the variance of the pixels (for each channel?)
     image=deepcopy(img)
     mean1 = np.mean(image[:,:,0])
@@ -61,17 +69,6 @@ def whitening(img):
     image[:,:,1] = np.divide((image[:,:,1]-mean2),np.floor(var2/float(255)))
     image[:,:,2] = np.divide((image[:,:,2]-mean3),np.floor(var3/float(255)))
 
-#    image[:,:,0] = np.divide((image[:,:,0]-np.floor(mean1/float(255))),np.floor(var1/float(255)))
-#    image[:,:,1] = np.divide((image[:,:,1]-np.floor(mean2/float(255))),np.floor(var2/float(255)))
-#    image[:,:,2] = np.divide((image[:,:,2]-np.floor(mean3/float(255))),np.floor(var3/float(255)))
-  
-#    print mean1
-#    print mean2
-#    print mean3
-#    
-#    print var1
-#    print var2
-#    print var3
         
     return image
     
@@ -99,7 +96,7 @@ def sharpening (img, param):
         
     return img
     
-def normalize(img):        
+def contrast_shifting(img):        
     norm_image = cv2.normalize(img, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
     return norm_image 
     
@@ -125,13 +122,15 @@ def blurring_smoothing (img,size_kernel):
     
     
     
-            #tests
-vect_img0 = images[0,:]
-vect_img1 = images[1,:]
-vect_img2 = images[2,:]
-vect_img3 = images[3,:]
-
-img = shuffle(vect_img0)
+                            #######tests#######
+#==============================================================================
+# vect_img0 = images[0,:]
+# vect_img1 = images[1,:]
+# vect_img2 = images[2,:]
+# vect_img3 = images[3,:]
+# 
+# img = shuffle(vect_img2)
+#==============================================================================
 
 
 #==============================================================================
@@ -147,12 +146,43 @@ img = shuffle(vect_img0)
 # 
 #==============================================================================
 
+#test blurring
+
+
 #==============================================================================
-# #test blurring
 # plt.figure() 
-# blur = blurring_smoothing(img,3) 
+# blurred = blurring_smoothing(img,3) 
+# 
+# plt.subplot(1,2,1)
 #  
-# plt.imshow(blur)
+# plt.imshow(img)
+#  
+# plt.subplot(1,2,2)
+#  
+# plt.imshow(blurred)
+# 
+# plt.savefig('../blurring.png', bbox_inches='tight')
+# 
+# plt.show()
+# 
+#==============================================================================
+
+#==============================================================================
+# plt.figure() 
+# blurred = blurring_smoothing(img,3) 
+# 
+#  
+# plt.imshow(img)
+# plt.savefig('../blurring1.png', bbox_inches='tight')
+# 
+# plt.close()
+#  
+# plt.figure()
+# plt.imshow(blurred)
+# plt.savefig('../blurring2.png', bbox_inches='tight')
+# 
+# plt.show()
+# plt.close
 #==============================================================================
 
 #==============================================================================
@@ -165,10 +195,10 @@ img = shuffle(vect_img0)
 
 
 #test normalisation contraste
+
 #==============================================================================
-# 
 # plt.figure()
-# shifted = normalize(img)
+# shifted = contrast_shifting(img)
 # 
 # plt.subplot(1,2,1)
 # 
@@ -178,13 +208,34 @@ img = shuffle(vect_img0)
 # 
 # plt.imshow(shifted)
 # 
+# plt.savefig('../shifted_contrast.png', bbox_inches='tight')
+# 
 # plt.show()
 #==============================================================================
 
 
 #==============================================================================
-#         #test sharpening
+# plt.figure() 
+# shifted = contrast_shifting(img)
 # 
+#  
+# plt.imshow(img)
+# plt.savefig('../contrast1.png', bbox_inches='tight')
+# 
+# plt.close()
+#  
+# plt.figure()
+# plt.imshow(shifted)
+# plt.savefig('../contrast2.png', bbox_inches='tight')
+# 
+# plt.show()
+# plt.close
+#==============================================================================
+
+
+        #test sharpening
+
+#==============================================================================
 # sharpened = sharpening(img,1)
 # 
 # plt.figure()
@@ -196,24 +247,48 @@ img = shuffle(vect_img0)
 # plt.subplot(1,2,2)
 #  
 # plt.imshow(sharpened)
+# 
+# plt.savefig('../sharpening.png', bbox_inches='tight')
 #  
 # plt.show()
+# plt.close()
 #==============================================================================
+#==============================================================================
+# plt.figure() 
+# sharpened = sharpening(img,1)
+# 
+#  
+# plt.imshow(img)
+# plt.savefig('../sharpening1.png', bbox_inches='tight')
+# 
+# plt.close()
+#  
+# plt.figure()
+# plt.imshow(sharpened)
+# plt.savefig('../sharpening2.png', bbox_inches='tight')
+# 
+# plt.show()
+# plt.close
+# 
+#==============================================================================
+
 
         #test whitening
 #whitened = whitening(img) 
 
 
 
-plt.figure()
-  
-plt.subplot(1,2,1)
-  
-plt.imshow(shuffle(vect_img2))
-  
-plt.subplot(1,2,2)
-
-plt.imshow(whitening(shuffle(vect_img2)))
-  
-plt.show()
+#==============================================================================
+# plt.figure()
+#   
+# plt.subplot(1,2,1)
+#   
+# plt.imshow(shuffle(vect_img2))
+#   
+# plt.subplot(1,2,2)
+# 
+# plt.imshow(whitening(shuffle(vect_img2)))
+#   
+# plt.show()
+#==============================================================================
 
